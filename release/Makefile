@@ -9,7 +9,7 @@ export CPLUS_INCLUDE_PATH
 
 #export PATH=$PATH:/Volumes/OpenWrt/openwrt_widora/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin
 #export STAGING_DIR=/Volumes/OpenWrt/openwrt_widora/staging_dir/toolchain-mipsel_24kec+dsp_gcc-4.8-linaro_uClibc-0.9.33.2/bin:$STAGING_DIR
-COMIPLE_TOOL_PREFIX := mipsel-openwrt-linux-uclibc-
+COMIPLE_TOOL_PREFIX := 
 CC := $(COMIPLE_TOOL_PREFIX)gcc
 GPP := $(COMIPLE_TOOL_PREFIX)g++
 AR := $(COMIPLE_TOOL_PREFIX)ar
