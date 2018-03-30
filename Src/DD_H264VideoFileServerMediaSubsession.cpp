@@ -49,7 +49,7 @@ DD_H264VideoFileServerMediaSubsession
 
 DD_H264VideoFileServerMediaSubsession::~DD_H264VideoFileServerMediaSubsession() 
 {
-  DBGFUNS("__DD_H264VideoFileServerMediaSubsession::destructor__\n");
+  //DBGFUNS("__DD_H264VideoFileServerMediaSubsession::destructor__\n");
   //  if (m_pSDPLine)  
   //   {  
   //       free(m_pSDPLine);  
@@ -65,7 +65,7 @@ FramedSource* DD_H264VideoFileServerMediaSubsession::createNewStreamSource(
   
   {
 
-  DBGFUNS("__DD_H264VideoFileServerMediaSubsession::createNewStreamSource__\n");
+  //DBGFUNS("__DD_H264VideoFileServerMediaSubsession::createNewStreamSource__\n");
   estBitrate = 1024000; // kbps, estimate
 
   //视频真正实现类
@@ -76,7 +76,7 @@ RTPSink* DD_H264VideoFileServerMediaSubsession
 ::createNewRTPSink(Groupsock* rtpGroupsock,
 		   unsigned char rtpPayloadTypeIfDynamic,
 		   FramedSource* /*inputSource*/) {
- DBGFUNS("__DD_H264VideoFileServerMediaSubsession::createNewRTPSink__\n");
+ //DBGFUNS("__DD_H264VideoFileServerMediaSubsession::createNewRTPSink__\n");
   return H264VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic);
 }
 

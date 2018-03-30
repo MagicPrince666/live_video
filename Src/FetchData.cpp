@@ -389,19 +389,19 @@ struct v4l2_buffer __buf;
 
 void cameraUninit(void)
 {
-  printf("TSS cameraUninit 110219-1\n");
+  //printf("TSS cameraUninit 110219-1\n");
 
   if(!buffers) return;//已经释放，直接返回
 
-  printf("TSS cameraUninit 110219-2\n");
+  //printf("TSS cameraUninit 110219-2\n");
   
 	for (n_buffers = 0; n_buffers < SUPPORTED_BUFFER_NUMBER; ++n_buffers)
 	{
-  		printf("TSS cameraUninit 110219-3\n");
+  		//printf("TSS cameraUninit 110219-3\n");
 		
 		if(buffers[n_buffers].start!=NULL)
 		{   
-  			printf("TSS cameraUninit 110219-4\n");
+  			//printf("TSS cameraUninit 110219-4\n");
 			
 			if(-1==munmap(buffers[n_buffers].start,buffers[n_buffers].length))
 			{
@@ -416,31 +416,31 @@ void cameraUninit(void)
 	// 释放申请的存储空间
 	if(buffers)
 	{
-  		printf("TSS cameraUninit 110219-5\n");
+  		//printf("TSS cameraUninit 110219-5\n");
 		free(buffers);
 		buffers=NULL;
 	}
 
 	if(vd)
 	{
-		perror("TSS  Uinit 6");
+		//perror("TSS  Uinit 6");
 		
 		if(vd->fd > 0)
 		{
 			int r = close(vd->fd);
-			printf("Uinit 1-2  close(vd->fd) r:%d\n", r);
+			//printf("Uinit 1-2  close(vd->fd) r:%d\n", r);
 			
 			vd->fd = -1;
 		}
-		printf("3 Uinit 2\n");
+		//printf("3 Uinit 2\n");
 		
 		int r1 = close_v4l2(vd);
 
-		printf("Uinit 2-1  close_v4l2(vd); r1:%d \n",r1);
+		//printf("Uinit 2-1  close_v4l2(vd); r1:%d \n",r1);
 
 		vd = NULL;
 	}
-	printf("Uinit END 3\n");
+	//printf("Uinit END 3\n");
 	
 };
 
@@ -466,11 +466,11 @@ void Init()
 
 int Uinit()
 {	
-	perror("TSS  Uinit 1");
+	//perror("TSS  Uinit 1");
 	cameraUninit();
-	perror("TSS  Uinit 2");
+	//perror("TSS  Uinit 2");
 	
-	perror("TSS  Uinit 3");
+	//perror("TSS  Uinit 3");
 	
 	if(rec_fp1)
 	{
@@ -478,7 +478,7 @@ int Uinit()
 		rec_fp1 = NULL;
 	}
 
-	perror("TSS  Uinit 5");
+	//perror("TSS  Uinit 5");
 	
 	return 0;
 };

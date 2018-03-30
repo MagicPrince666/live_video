@@ -65,19 +65,19 @@ Boolean MediaSink::startPlaying(MediaSource& source,
 				afterPlayingFunc* afterFunc,
 				void* afterClientData) {
   // Make sure we're not already being played:
-  printf("MediaSink::startPlaying 1 \n");
+  //printf("MediaSink::startPlaying 1 \n");
   if (fSource != NULL) {
     envir().setResultMsg("This sink is already being played");
     return False;
   }
-  printf("MediaSink::startPlaying 2");
+  //printf("MediaSink::startPlaying 2");
 
   // Make sure our source is compatible:
   if (!sourceIsCompatibleWithUs(source)) {
     envir().setResultMsg("MediaSink::startPlaying(): source is not compatible!");
     return False;
   }
-  printf("MediaSink::startPlaying 3");
+  //printf("MediaSink::startPlaying 3");
   
   fSource = (FramedSource*)&source;
 
@@ -88,17 +88,17 @@ Boolean MediaSink::startPlaying(MediaSource& source,
 
 void MediaSink::stopPlaying() {
   // First, tell the source that we're no longer interested:
-      printf(" MediaSink::stopPlaying()  1");
+      //printf(" MediaSink::stopPlaying()  1");
   
   if (fSource != NULL) 
   fSource->stopGettingFrames();
 
- printf(" MediaSink::stopPlaying()  2");
+ //printf(" MediaSink::stopPlaying()  2");
 
 
   // Cancel any pending tasks:
   envir().taskScheduler().unscheduleDelayedTask(nextTask());
-      printf(" MediaSink::stopPlaying()  3");
+      //printf(" MediaSink::stopPlaying()  3");
 
   fSource = NULL; // indicates that we can be played again
   fAfterFunc = NULL;

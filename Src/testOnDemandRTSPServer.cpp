@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
   //eg: .RTSPServer /dev/video1 30  1024 554;
   // you can input "RTSPServer" instead of "RTSPServer /dev/video1  /dev/dsp 30  1024 554" 
   int fps = 30;
-  int bitrates = 4096;
+  int bitrates = 2048;
   int port = 8554;
   char* vd = (char *)"/dev/video2";
 

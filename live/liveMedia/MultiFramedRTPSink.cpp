@@ -29,15 +29,15 @@ void MultiFramedRTPSink::setPacketSizes(unsigned preferredPacketSize,
   if (preferredPacketSize > maxPacketSize || preferredPacketSize == 0) return;
       // sanity check
 
-  printf("MultiFramedRTPSink::setPacketSizes 1");
+  //printf("MultiFramedRTPSink::setPacketSizes 1");
   delete fOutBuf;
-  printf("MultiFramedRTPSink::setPacketSizes 2");
+  //printf("MultiFramedRTPSink::setPacketSizes 2");
   
   fOutBuf = new OutPacketBuffer(preferredPacketSize, maxPacketSize);
-  printf("MultiFramedRTPSink::setPacketSizes 3");
+  //printf("MultiFramedRTPSink::setPacketSizes 3");
   
   fOurMaxPacketSize = maxPacketSize; // save value, in case subclasses need it
-  printf("MultiFramedRTPSink::setPacketSizes 4");
+  //printf("MultiFramedRTPSink::setPacketSizes 4");
   
 }
 
@@ -64,21 +64,21 @@ MultiFramedRTPSink::MultiFramedRTPSink(UsageEnvironment& env,
 }
 
 MultiFramedRTPSink::~MultiFramedRTPSink() {
- printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1 \n");
+ //printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1 \n");
 
   if(fOutBuf)
   
   {
- printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-1 \n");
+ //printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-1 \n");
     delete fOutBuf;
- printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-2 \n");
+ //printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-2 \n");
     fOutBuf = NULL;
- printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-3 \n");
+//printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-3 \n");
     
   }
   
 
- printf("MultiFramedRTPSink::~MultiFramedRTPSink()  2 \n");
+ //printf("MultiFramedRTPSink::~MultiFramedRTPSink()  2 \n");
   
 }
 
@@ -178,7 +178,7 @@ void MultiFramedRTPSink::setFramePadding(unsigned numPaddingBytes) {
 Boolean MultiFramedRTPSink::continuePlaying() {
   // Send the first packet.
   // (This will also schedule any future sends.)
-    printf("MultiFramedRTPSink::continuePlaying() 1");
+  //printf("MultiFramedRTPSink::continuePlaying() 1\n");
 
   buildAndSendPacket(True);
   return True;
@@ -191,7 +191,7 @@ void MultiFramedRTPSink::stopPlaying() {
 
   // Then call the default "stopPlaying()" function:
   MediaSink::stopPlaying();
-    printf("MultiFramedRTPSink::stopPlaying() 1 \n");
+  //printf("MultiFramedRTPSink::stopPlaying() 1 \n");
   
 }
 

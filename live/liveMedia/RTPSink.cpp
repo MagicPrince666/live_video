@@ -67,12 +67,12 @@ RTPSink::RTPSink(UsageEnvironment& env,
 }
 
 RTPSink::~RTPSink() {
-   printf("RTPSink::~RTPSink() 1 \n");
+   //printf("RTPSink::~RTPSink() 1 \n");
 
   delete fTransmissionStatsDB;
   delete[] (char*)fRTPPayloadFormatName;
   fRTPInterface.forgetOurGroupsock();
-   printf("RTPSink::~RTPSink() 2 \n");
+   //printf("RTPSink::~RTPSink() 2 \n");
   
     // so that the "fRTCPInterface" destructor doesn't turn off background read handling (in case
     // its 'groupsock' is being shared with something else that does background read handling).

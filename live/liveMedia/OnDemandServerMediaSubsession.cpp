@@ -510,17 +510,17 @@ void StreamState
   if (dests == NULL) return;
 
 
-printf("TSS %d\n", 4);
+//printf("TSS %d\n", 4);
   if (fRTCPInstance == NULL && fRTPSink != NULL) {
     // Create (and start) a 'RTCP instance' for this RTP sink:
     fRTCPInstance = fMaster.createRTCP(fRTCPgs, fTotalBW, (unsigned char*)fMaster.fCNAME, fRTPSink);
         // Note: This starts RTCP running automatically
     fRTCPInstance->setAppHandler(fMaster.fAppHandlerTask, fMaster.fAppHandlerClientData);
   }
-printf("TSS %d\n", 5);
+//printf("TSS %d\n", 5);
 
   if (dests->isTCP) {
-    printf("TSS %d\n", 6);
+    //printf("TSS %d\n", 6);
 
     // Change RTP and RTCP to use the TCP socket instead of UDP:
     if (fRTPSink != NULL) {
@@ -536,63 +536,63 @@ printf("TSS %d\n", 5);
 					  rtcpRRHandler, rtcpRRHandlerClientData);
     }
   } else {
-    printf("TSS %d\n", 6-1);
+    //printf("TSS %d\n", 6-1);
     
     // Tell the RTP and RTCP 'groupsocks' about this destination
     // (in case they don't already have it):
     if (fRTPgs != NULL) fRTPgs->addDestination(dests->addr, dests->rtpPort, clientSessionId);
 
-    printf("TSS %d\n", 6-2);
+    //printf("TSS %d\n", 6-2);
     
     if (fRTCPgs != NULL && !(fRTCPgs == fRTPgs && dests->rtcpPort.num() == dests->rtpPort.num())) {
       fRTCPgs->addDestination(dests->addr, dests->rtcpPort, clientSessionId);
     }
 
-    printf("TSS %d\n", 6-3);
+    //printf("TSS %d\n", 6-3);
     
     if (fRTCPInstance != NULL) {
-    printf("TSS %d\n", 6-4);
+    //printf("TSS %d\n", 6-4);
       
       fRTCPInstance->setSpecificRRHandler(dests->addr.s_addr, dests->rtcpPort,
 					  rtcpRRHandler, rtcpRRHandlerClientData);
     }
   }
-    printf("TSS %d\n", 7);
+    //printf("TSS %d\n", 7);
 
   if (fRTCPInstance != NULL) {
     // Hack: Send an initial RTCP "SR" packet, before the initial RTP packet, so that receivers will (likely) be able to
     // get RTCP-synchronized presentation times immediately:
     fRTCPInstance->sendReport();
   }
-printf("TSS %d\n", 7-1);
+//printf("TSS %d\n", 7-1);
   if (!fAreCurrentlyPlaying && fMediaSource != NULL) {
-printf("TSS %d\n", 7-1-1);
+//printf("TSS %d\n", 7-1-1);
     
     if (fRTPSink != NULL) {
-printf("TSS %d\n", 7-1-2);
+//printf("TSS %d\n", 7-1-2);
       
       fRTPSink->startPlaying(*fMediaSource, afterPlayingStreamState, this);
       fAreCurrentlyPlaying = True;
     } else if (fUDPSink != NULL) {
-printf("TSS %d\n", 7-1-3);
+//printf("TSS %d\n", 7-1-3);
       
       fUDPSink->startPlaying(*fMediaSource, afterPlayingStreamState, this);
       fAreCurrentlyPlaying = True;
     }
   }
-  printf("TSS %d\n", 7-2);
+  //printf("TSS %d\n", 7-2);
 }
 
 void StreamState::pause() {
-    printf("StreamState::pause 1 \n");
+    //printf("StreamState::pause 1 \n");
 
   if (fRTPSink != NULL) fRTPSink->stopPlaying();
-    printf("StreamState::pause 2 \n");
+   // printf("StreamState::pause 2 \n");
 
 
   if (fUDPSink != NULL) fUDPSink->stopPlaying();
 
-    printf("StreamState::pause 3 \n");
+    //printf("StreamState::pause 3 \n");
   
   fAreCurrentlyPlaying = False;
 }

@@ -1607,7 +1607,7 @@ void RTSPServer::RTSPClientSession
   } else {
     subsession->testScaleFactor(scale);
   }
-  printf("TSS %d\n", 2);
+  //printf("TSS %d\n", 0);
   char buf[100];
   char* scaleHeader;
   if (!sawScaleHeader) {

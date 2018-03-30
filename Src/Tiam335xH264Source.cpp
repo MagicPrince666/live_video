@@ -49,16 +49,16 @@ Tiam335xH264Source::Tiam335xH264Source(UsageEnvironment& env):
 
 Tiam335xH264Source::~Tiam335xH264Source()
 {
-	printf("Tiam335xH264Source::~Tiam335xH264Source() tid:%d  \n",pthread_self());
+	//printf("Tiam335xH264Source::~Tiam335xH264Source() tid:%d  \n",pthread_self());
 
 	if(rec_file != NULL)
 		fclose(rec_file);
-	printf("Tiam335xH264Source::~Tiam335xH264Source() 1-3\n");
+	//printf("Tiam335xH264Source::~Tiam335xH264Source() 1-3\n");
 		
 	rec_file = NULL;
-	printf("Tiam335xH264Source::~Tiam335xH264Source() 1-4\n");
+	//printf("Tiam335xH264Source::~Tiam335xH264Source() 1-4\n");
 	FetchData::stopCap();
-	printf("Tiam335xH264Source::~Tiam335xH264Source() 2\n");
+	//printf("Tiam335xH264Source::~Tiam335xH264Source() 2\n");
 	
 	envir().taskScheduler().deleteEventTrigger(m_eventTriggerId);
 	// envir().taskScheduler().unscheduleDelayedTask(m_pToken);  
@@ -150,7 +150,7 @@ void Tiam335xH264Source::doGetNextFrame()
 
 void Tiam335xH264Source::doStopGettingFrames()
 {
-	DBGFUNS("Tiam335xH264Source STOP FRAME 1  tid:%d\n",pthread_self());
+	//DBGFUNS("Tiam335xH264Source STOP FRAME 1  tid:%d\n",pthread_self());
 	//启动获取视频数据线程
 	// FetchData::stopCap();
 	// emptyBufferFlag = true;
@@ -162,13 +162,13 @@ void Tiam335xH264Source::doStopGettingFrames()
 		usleep(10000);
 	}
 
-	DBGFUNS("Tiam335xH264Source STOP FRAME 2\n");
+	//DBGFUNS("Tiam335xH264Source STOP FRAME 2\n");
 }
 
 
 //网络包尺寸，注意尺寸不能太小，否则会崩溃
 unsigned int Tiam335xH264Source::maxFrameSize() const
 {
-	printf("Tiam335xH264Source::maxFrameSize \n");
+	//printf("Tiam335xH264Source::maxFrameSize \n");
 	return 150000;
 }

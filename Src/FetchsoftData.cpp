@@ -429,17 +429,17 @@ struct v4l2_buffer __buf;
 
 void cameraUninit(void)
 {
-  	printf("TSS cameraUninit 110219-1\n");
+  	//printf("TSS cameraUninit 110219-1\n");
 #ifndef SOFT_H264	
   	if(!buffers) return;//已经释放，直接返回
   
 	for (n_buffers = 0; n_buffers < SUPPORTED_BUFFER_NUMBER; ++n_buffers)
 	{
-  		printf("TSS cameraUninit 110219-3\n");
+  		//printf("TSS cameraUninit 110219-3\n");
 		
 		if(buffers[n_buffers].start!=NULL)
 		{   
-  			printf("TSS cameraUninit 110219-4\n");
+  			//printf("TSS cameraUninit 110219-4\n");
 			
 			if(-1==munmap(buffers[n_buffers].start,buffers[n_buffers].length))
 			{
