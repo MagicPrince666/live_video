@@ -644,6 +644,7 @@ int FetchData::getData(void* fTo, unsigned fMaxSize, unsigned& fFrameSize, unsig
 
 #include "video_capture.h"
 #include "h264encoder.h"
+#include "ringbuffer.h"
 
 #define MAX 10
 #define KEY "012345"
@@ -658,7 +659,7 @@ struct cam_data Buff[2];
 pthread_t thread[2];
 int flag[2],point=0;
 FILE * f_d;
-//unsigned char *h264_buf;
+extern uint8_t *h264_buf;
 int h264_length=0;
 int framelength=0;
 extern Encoder en;
@@ -720,51 +721,122 @@ bool s_quit = true;
 
 bool emptyBuffer = false;
 char t_buf[204800];
-void *go(void *arg)
+
+RingBuffer *rbuf;
+
+void *video_Capture_Thread(void *arg)
 {
-	printf("GOOOOOOOOOOOOOOOOOooo s_quit:%d\n", s_quit);
-    while(!s_quit)
+	//compress_begin(&en, cam->width, cam->height);//初始化编码器
+
+	int i=0;
+
+	//unsigned char *data;
+
+	int len=framelength;
+	
+	struct timeval now;
+
+	struct timespec outtime;
+
+	while(1)
 	{
-//my code
-		printf("FetchDatavvd go 1 \n");
+		// if(start == false)
+		// {
+		// 	usleep(10);
+		// 	continue;
+		// }
+		usleep(DelayTime);
 
-		if(cam != NULL && cam->fd != 0)
+		gettimeofday(&now, NULL);
+
+		outtime.tv_sec =now.tv_sec;
+
+		outtime.tv_nsec =DelayTime * 1000;
+
+		pthread_mutex_lock(&(Buff[i].lock)); /*获取互斥锁,锁定当前缓冲区*/
+		//if(i)   printf("----video_Capture_Thread Buff 1\n");
+		//if(!i)   printf("----video_Capture_Thread Buff 0\n");
+
+		while((Buff[i].wpos + len)%BUF_SIZE==Buff[i].rpos && Buff[i].rpos != 0) /*等待缓存区处理操作完成*/
 		{
-			printf("FetchDatavvd go 2 \n");
-			
-			break;
-		}else
-		{
-			printf("FetchDatavvd go 3 \n");
-			
-			Init();
-			sleep(1);
+			//printf("***********video_Capture_Thread ************阻塞\n");
+			//pthread_cond_wait(&(Buff[i].encodeOK),&(Buff[i].lock));
+			pthread_cond_timedwait(&(Buff[i].encodeOK),&(Buff[i].lock),&outtime);
 		}
-	}
 
-   while(!s_quit)
-   {
-		int i=-1;
+
 		if(buffOneFrame(&Buff[i] , cam))//采集一帧数据
 		{
+
+			pthread_cond_signal(&(Buff[i].captureOK)); /*设置状态信号*/
+
+			pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
+
 			flag[i]=1;//缓冲区i已满
+
 			Buff[i].rpos=0;
-			i=!i;	//切换到另一个缓冲区		
+
+			i=!i;	//切换到另一个缓冲区
+			
 			Buff[i].wpos=0;
+
 			flag[i]=0;//缓冲区i为空
-		}	
-		/*H.264压缩视频*/
-		if(flag[1]==0 && flag[0]==0 || flag[i]==-1) ;
+		}
+
+		pthread_cond_signal(&(Buff[i].captureOK)); /*设置状态信号*/
+
+		pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
+		
+	}
+}
+
+void *video_Encode_Thread(void *arg)
+{
+	int i=-1;
+
+	while(1)
+	{	
+		// if(start == false)
+		// {
+		// 	usleep(10);
+		// 	continue;
+		// }
+
+		if((flag[1]==0 && flag[0]==0) || (flag[i]==-1)) continue;
+
 		if(flag[0]==1) i=0;
+
 		if(flag[1]==1) i=1;
-		if(i)   printf("-------------video_Encode_Thread Buff 1\n");
-		if(!i)   printf("-------------video_Encode_Thread Buff 0\n");	
-		encode_frame(Buff[i].cam_mbuf + Buff[i].rpos,0);
+
+		pthread_mutex_lock(&(Buff[i].lock)); /*获取互斥锁*/
+		//if(i)   printf("-------------video_Encode_Thread Buff 1\n");
+		//if(!i)   printf("-------------video_Encode_Thread Buff 0\n");
+
+		/*H.264压缩视频*/
+		//encode_frame(Buff[i].cam_mbuf + Buff[i].rpos,0);
+		int h264_length = 0;
+		h264_length = compress_frame(&en, -1, Buff[i].cam_mbuf + Buff[i].rpos, h264_buf);
+
+		if (h264_length > 0) {
+	
+			//printf("%s%d\n","-----------h264_length=",h264_length);
+			//写h264文件
+			//fwrite(h264_buf, h264_length, 1, h264_fp);
+
+			RingBuffer_write(rbuf,h264_buf,h264_length);
+
+			//printf("buf front:%d rear :%d\n",q.front,q.rear);
+		}
+
 		Buff[i].rpos+=framelength;
+
 		if(Buff[i].rpos>=BUF_SIZE) { Buff[i].rpos=0;Buff[!i].rpos=0;flag[i]=-1;}
 
-		int len = cbuf_enqueue(&FetchData::data,h264_buf, h264_length);
-   }
+		/*H.264压缩视频*/
+		pthread_cond_signal(&(Buff[i].encodeOK));
+
+		pthread_mutex_unlock(&(Buff[i].lock));/*释放互斥锁*/
+	}
 }
 
 int FetchData::bit_rate_setting(int rate)
@@ -794,47 +866,11 @@ int FetchData::getData(void* fTo, unsigned fMaxSize, unsigned& fFrameSize, unsig
 		printf("FetchData::getData s_b_running = false  \n");
 		return 0;
 	}
-//my code
-	if(cam == NULL || cam->fd == 0)
-	{
-		printf("test FCCC 4 \n");	
-		return -1;
-	}
-	
-	int i=-1;
-	if(buffOneFrame(&Buff[i] , cam))//采集一帧数据
-	{
-		flag[i]=1;//缓冲区i已满
-		Buff[i].rpos=0;
-		i=!i;	//切换到另一个缓冲区		
-		Buff[i].wpos=0;
-		flag[i]=0;//缓冲区i为空
-	}	
-	/*H.264压缩视频*/
-	if(flag[1]==0 && flag[0]==0 || flag[i]==-1) return 1;
-	if(flag[0]==1) i=0;
-	if(flag[1]==1) i=1;
-	if(i)   printf("-------------video_Encode_Thread Buff 1\n");
-	if(!i)   printf("-------------video_Encode_Thread Buff 0\n");	
-	encode_frame(Buff[i].cam_mbuf + Buff[i].rpos,0);
-	Buff[i].rpos+=framelength;
-	if(Buff[i].rpos>=BUF_SIZE) { Buff[i].rpos=0;Buff[!i].rpos=0;flag[i]=-1;}
-	
-	int len = cbuf_enqueue(&FetchData::data,h264_buf, h264_length);
-	//拷贝视频到live555缓存
-	if(len < fMaxSize)
-	{            
-		memcpy(fTo, h264_buf, len);
-		fFrameSize = len;
-		fNumTruncatedBytes = 0;
-	}        
-	else        
-	{           
-		memcpy(fTo, h264_buf, fMaxSize);
-		fNumTruncatedBytes = len - fMaxSize; 
-		fFrameSize = fMaxSize;
-	}
-	return len;
+
+	while(RingBuffer_empty(rbuf))usleep(100);//等待数据
+	fFrameSize = RingBuffer_read(rbuf,(uint8_t*)fTo,fMaxSize);
+
+	return fFrameSize;
 }
 
 #endif
@@ -861,6 +897,9 @@ void FetchData::startCap()
 	s_b_running = true;
 	data.CUBFEACHDATALEN = 200000;
 	cbuf_init(&data);
+#ifdef SOFT_H264
+	rbuf = RingBuffer_create(DEFAULT_BUF_SIZE);
+#endif
 
 	printf("void FetchData::startCap() 1\n");
 	if(!s_quit)
@@ -880,5 +919,8 @@ void FetchData::stopCap()
 	printf("FetchData stopCap 1\n");  
     s_quit = true;
 	cbuf_destroy(&data);
+#ifdef SOFT_H264
+	RingBuffer_destroy(rbuf);
+#endif
     Uinit();
 }

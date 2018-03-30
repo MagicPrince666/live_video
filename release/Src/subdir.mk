@@ -12,7 +12,8 @@ CPP_SRCS += \
 ../Src/cbuf.cpp \
 ../Src/thread.cpp \
 ../Src/v4l2uvc.cpp \
-../Src/h264_xu_ctrls.cpp
+../Src/h264_xu_ctrls.cpp 
+
 
 OBJS += \
 ./Src/testOnDemandRTSPServer.o \
