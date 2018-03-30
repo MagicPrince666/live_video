@@ -109,20 +109,16 @@ void FramedSource::stopGettingFrames() {
   fIsCurrentlyAwaitingData = False; // indicates that we can be read again
   fAfterGettingFunc = NULL;
   fOnCloseFunc = NULL;
-  printf("FramedSource::stopGettingFrames() 1\n");
 
   // Perform any specialized action now:
   doStopGettingFrames();
-  printf("FramedSource::stopGettingFrames() 2\n");
 }
 
 void FramedSource::doStopGettingFrames() {
-  printf("FramedSource::doStopGettingFrames() 1\n");
   
   // Default implementation: Do nothing except cancel any pending 'delivery' task:
   envir().taskScheduler().unscheduleDelayedTask(nextTask());
   // Subclasses may wish to redefine this function.
-  printf("FramedSource::doStopGettingFrames() 2\n");
 }
 
 unsigned FramedSource::maxFrameSize() const {

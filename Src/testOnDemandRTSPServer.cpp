@@ -156,8 +156,8 @@ int main(int argc, char** argv) {
   // you can input "RTSPServer" instead of "RTSPServer /dev/video1  /dev/dsp 30  1024 554" 
   int fps = 30;
   int bitrates = 4096;
-  int port = 554;
-  char* vd = (char *)"/dev/video0";
+  int port = 8554;
+  char* vd = (char *)"/dev/video2";
 
   if(argc == 2 && strcmp(argv[1], "-h") == 0)
   {

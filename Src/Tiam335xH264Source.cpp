@@ -134,7 +134,7 @@ void Tiam335xH264Source::GetFrameData()
 	
 			
 } 
- struct timeval m_start, m_end;
+ //struct timeval m_start, m_end;
 
 void Tiam335xH264Source::doGetNextFrame()
 {

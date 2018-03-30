@@ -29,9 +29,9 @@ public:
   static DD_H264VideoFileServerMediaSubsession*
   createNew(UsageEnvironment& , FramedSource* );
 
-  static void afterPlayingDummy(void* ptr);
-  static void chkForAuxSDPLine(void* ptr);
-  void chkForAuxSDPLine1();
+  // static void afterPlayingDummy(void* ptr);
+  // static void chkForAuxSDPLine(void* ptr);
+  // void chkForAuxSDPLine1();
 
 protected:
   DD_H264VideoFileServerMediaSubsession(UsageEnvironment& , FramedSource*);
@@ -45,13 +45,13 @@ protected: // redefined virtual functions
   virtual RTPSink* createNewRTPSink(Groupsock* rtpGroupsock,
                                     unsigned char rtpPayloadTypeIfDynamic,
 				    FramedSource* inputSource);
-  virtual char const * getAuxSDPLine(RTPSink * rtpSink, FramedSource * inputSource);  
+  //virtual char const * getAuxSDPLine(RTPSink * rtpSink, FramedSource * inputSource);  
 
 private:
     FramedSource * m_pSource;  
-    char * m_pSDPLine;  
-    RTPSink * m_pDummyRTPSink;  
-    char m_done; 
+    //char * m_pSDPLine;  
+    //RTPSink * m_pDummyRTPSink;  
+    //char m_done; 
 
 
 
