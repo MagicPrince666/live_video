@@ -29,10 +29,10 @@ MediaSink::MediaSink(UsageEnvironment& env)
 }
 
 MediaSink::~MediaSink() {
-  printf("MediaSink::~!MediaSink 1 \n");
+  //printf("MediaSink::~!MediaSink 1 \n");
   
   stopPlaying();
-  printf("MediaSink::~!MediaSink 2 \n");
+  printf("MediaSink::~!MediaSink \n");
   
 }
 

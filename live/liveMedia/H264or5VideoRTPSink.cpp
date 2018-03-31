@@ -106,10 +106,10 @@ H264or5VideoRTPSink::~H264or5VideoRTPSink() {
   delete[] fFmtpSDPLine;
   delete[] fVPS; delete[] fSPS; delete[] fPPS;
 
-      printf("H264or5VideoRTPSink::~H264or5VideoRTPSink() 1 \n");
+      //printf("H264or5VideoRTPSink::~H264or5VideoRTPSink() 1 \n");
 
   stopPlaying(); // call this now, because we won't have our 'fragmenter' when the base class destructor calls it later.
-    printf("H264or5VideoRTPSink::~H264or5VideoRTPSink() 2 \n");
+    printf("H264or5VideoRTPSink::~H264or5VideoRTPSink() \n");
 
   // Close our 'fragmenter' as well:
   Medium::close(fOurFragmenter);

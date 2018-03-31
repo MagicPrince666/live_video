@@ -26,12 +26,12 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 void FramedFilter::detachInputSource() {
   if (fInputSource != NULL) {
     fInputSource->stopGettingFrames();
-    printf(" FramedFilter::detachInputSource 1");
+    //printf(" FramedFilter::detachInputSource 1\n");
     reassignInputSource(NULL);
-    printf(" FramedFilter::detachInputSource 2");
+    //printf(" FramedFilter::detachInputSource 2\n");
     
   }
-    printf(" FramedFilter::detachInputSource 3");
+    printf("FramedFilter::detachInputSource \n");
   
 }
 

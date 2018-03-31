@@ -78,7 +78,7 @@ time_t curdate;
 
 int open_device(int i)
 {
-	printf("-------------- open_device-------------------\n");
+	//printf("-------------- open_device-------------------\n");
 
 	struct stat st;
 	
@@ -112,7 +112,7 @@ int open_device(int i)
 	vd = (struct vdIn *) calloc(1, sizeof(struct vdIn));
 	printf("Use %s\n",dev_name);
 	vd->fd = open(dev_name, O_RDWR);
-	printf("vd->fd 11 : %d", vd->fd);
+	//printf("vd->fd 11 : %d", vd->fd);
 
 	if (0 >= vd->fd)
 	{
@@ -215,8 +215,8 @@ int SUPPORTED_BUFFER_NUMBER = 4;
 int init_mmap(void)
 {
 
-	printf("---------------init_mmap------------------\n");
-		perror("-init_mmap ");
+	//printf("---------------init_mmap------------------\n");
+	//perror("-init_mmap ");
 
 	struct v4l2_requestbuffers req;
 
@@ -286,8 +286,8 @@ int init_mmap(void)
 int start_previewing(void)
 {
 
-	printf("--------------start_previewing-------------------\n");
-	perror("-start_previewing ");
+	//printf("--------------start_previewing-------------------\n");
+	//perror("-start_previewing ");
 
 	unsigned int i;
 	enum v4l2_buf_type type;
@@ -315,27 +315,27 @@ int start_previewing(void)
 
 int cameraInit()
 {
-	printf("-cameraInit 1\n");
+	//printf("-cameraInit 1\n");
 	
 	int width = 1280; 
 	int height = 720;
 		
 	int format = V4L2_PIX_FMT_H264;
-	printf("-cameraInit 2\n");
+	//printf("-cameraInit 2\n");
 	
 	int ret;
 	ret = open_device(1);
 
-	printf("-cameraInit 3 ret:%d\n", ret);
+	//printf("-cameraInit 3 ret:%d\n", ret);
 
 	if(ret != -1)
 	{
-		printf("------open_device--success-- !\n ");
+		//printf("------open_device--success-- !\n ");
 		ret = init_device(width,height,format);
 	}
 	if(ret != -1)
 	{
-		printf("------init_device---success------- !\n ");
+		//printf("------init_device---success------- !\n ");
 		ret = start_previewing();
 	}
 
@@ -389,20 +389,12 @@ struct v4l2_buffer __buf;
 
 void cameraUninit(void)
 {
-  //printf("TSS cameraUninit 110219-1\n");
-
   if(!buffers) return;//已经释放，直接返回
 
-  //printf("TSS cameraUninit 110219-2\n");
-  
 	for (n_buffers = 0; n_buffers < SUPPORTED_BUFFER_NUMBER; ++n_buffers)
 	{
-  		//printf("TSS cameraUninit 110219-3\n");
-		
 		if(buffers[n_buffers].start!=NULL)
 		{   
-  			//printf("TSS cameraUninit 110219-4\n");
-			
 			if(-1==munmap(buffers[n_buffers].start,buffers[n_buffers].length))
 			{
 				perror("Fail to \"munmap\"\n");
@@ -416,33 +408,22 @@ void cameraUninit(void)
 	// 释放申请的存储空间
 	if(buffers)
 	{
-  		//printf("TSS cameraUninit 110219-5\n");
 		free(buffers);
 		buffers=NULL;
 	}
 
 	if(vd)
-	{
-		//perror("TSS  Uinit 6");
-		
+	{	
 		if(vd->fd > 0)
 		{
-			int r = close(vd->fd);
-			//printf("Uinit 1-2  close(vd->fd) r:%d\n", r);
-			
+			int r = close(vd->fd);			
 			vd->fd = -1;
 		}
-		//printf("3 Uinit 2\n");
 		
 		int r1 = close_v4l2(vd);
-
-		//printf("Uinit 2-1  close_v4l2(vd); r1:%d \n",r1);
-
 		vd = NULL;
 	}
-	//printf("Uinit END 3\n");
-	
-};
+}
 
 // Queue<Mediadata*> sWorkDataQueue;
 const int QUEUE_LEN_MAX = 4;
@@ -466,19 +447,13 @@ void Init()
 
 int Uinit()
 {	
-	//perror("TSS  Uinit 1");
 	cameraUninit();
-	//perror("TSS  Uinit 2");
-	
-	//perror("TSS  Uinit 3");
 	
 	if(rec_fp1)
 	{
 		fclose(rec_fp1);
 		rec_fp1 = NULL;
 	}
-
-	//perror("TSS  Uinit 5");
 	
 	return 0;
 };
@@ -487,71 +462,10 @@ void* FetchData::s_source = NULL;
 bool s_quit = true; 
 
 bool emptyBuffer = false;
-//char t_buf[204800];
-/*
-void *go(void *arg)
-{
-	printf("GOOOOOOOOOOOOOOOOOooo s_quit:%d\n", s_quit);
-    while(!s_quit)
-	{
-		printf("FetchDatavvd go 1 ");
-		
-		if(vd != NULL && vd->fd != NULL)
-		{
-			printf("FetchDatavvd go 2 ");
-			
-			break;
-		}else
-		{
-			printf("FetchDatavvd go 2 ");
-			
-			Init();
-			sleep(1);
-		}
-	}
 
-   while(!s_quit)
-   {
-		if(vd == NULL || vd->fd == NULL)
-		{
-			printf("test FCCC 4 \n");
-			
-			return NULL;
-		}
-	  
-    	CLEAR (__buf);
-		__buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		__buf.memory = V4L2_MEMORY_MMAP;
-		
-		int ret = ioctl(vd->fd, VIDIOC_DQBUF, &__buf);
-		
-		if (ret < 0) 
-		{   
-			printf("go() FetchData Unable to dequeue buffer ret:%d!\n", ret);
-			cameraUninit();
-			if(-1 == cameraInit())
-				exit(0);
-			else
-			sleep(1);
-            continue;
-		}
-		
-		int l = cbuf_enqueue(&FetchData::data, buffers[__buf.index].start, __buf.bytesused);
-
-		//fwrite(buffers[__buf.index].start, __buf.bytesused, 1, rec_fp1);
-
-		ret = ioctl(vd->fd, VIDIOC_QBUF, &__buf);
-
-		if (ret < 0) 
-		{
-			printf("Unable to requeue buffer\n");
-		}
-   }
-}
-*/
 int FetchData::bit_rate_setting(int rate)
 {
-	printf("-----start seting bit rate-----\n");
+	//printf("-----start seting bit rate-----\n");
 	int ret = -1;
 	
 	setBitRate(rate/1000);
@@ -902,22 +816,20 @@ void FetchData::startCap()
 	rbuf = RingBuffer_create(DEFAULT_BUF_SIZE);
 #endif
 
-	printf("void FetchData::startCap() 1\n");
+	printf("void FetchData::startCap() \n");
 	if(!s_quit)
 	{
 		return;
 	}
 	s_quit = false;
-	printf("void FetchData::startCap() 3\n");
     Init();
-	printf("void FetchData::startCap() 4\n");
 	printf("pthread_create ok \n");  
 }
 
 void FetchData::stopCap()
 {
 	s_b_running = false;
-	printf("FetchData stopCap 1\n");  
+	printf("FetchData stopCap \n");  
     s_quit = true;
 	//cbuf_destroy(&data);
 #ifdef SOFT_H264

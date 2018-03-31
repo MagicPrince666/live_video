@@ -30,14 +30,8 @@ Tiam335xH264Source::Tiam335xH264Source(UsageEnvironment& env):
 	m_is_queue_empty =false;
 	bVideoFirst = true;
 	m_started = false;
-//   cameraInit();
-#if 0
-  char rec_filename[] = "264_1.264";
-  if(rec_file == NULL)
-  	rec_file = fopen(rec_filename, "wb");
-	printf("Tiam335xH264Source:: Tiam335xH264Source() 1\n");
-#endif
-	//RingBuffer rb(order, YieldWaitConsumerStrategy());
+
+	printf("Tiam335xH264Source::Tiam335xH264Source \n");
 	gettimeofday(&sPresentationTime, NULL);
 
 	//启动获取视频数据线程
@@ -49,20 +43,12 @@ Tiam335xH264Source::Tiam335xH264Source(UsageEnvironment& env):
 
 Tiam335xH264Source::~Tiam335xH264Source()
 {
-	//printf("Tiam335xH264Source::~Tiam335xH264Source() tid:%d  \n",pthread_self());
-
 	if(rec_file != NULL)
 		fclose(rec_file);
-	//printf("Tiam335xH264Source::~Tiam335xH264Source() 1-3\n");
-		
 	rec_file = NULL;
-	//printf("Tiam335xH264Source::~Tiam335xH264Source() 1-4\n");
 	FetchData::stopCap();
-	//printf("Tiam335xH264Source::~Tiam335xH264Source() 2\n");
 	
-	envir().taskScheduler().deleteEventTrigger(m_eventTriggerId);
-	// envir().taskScheduler().unscheduleDelayedTask(m_pToken);  
-
+	envir().taskScheduler().deleteEventTrigger(m_eventTriggerId); 
 }
 
 int timeval_substract(struct timeval* result, struct timeval*t2, struct timeval* t1)
@@ -112,29 +98,22 @@ void Tiam335xH264Source::doUpdateDataNotify()
 	afterGetting(this);
 }
 
-// bool bVideoFirst = true;
-// char _buf[204800];
+
 void Tiam335xH264Source::GetFrameData()
 {
-	
-	// printf("Tiam335xH264Source::GetFrameData 1 m_can_get_nextframe:%d tid:%d\n",m_can_get_nextframe,pthread_self());
 	unsigned len = FetchData::getData(fTo,fMaxSize, fFrameSize, fNumTruncatedBytes);
-	// printf("Tiam335xH264Source::GetFrameData 2\n");
 	
 	gettimeofday(&fPresentationTime, NULL);
 	afterGetting(this);
 
 	if(!m_can_get_nextframe)
 	{
-		envir().taskScheduler().unscheduleDelayedTask(nextTask());
-		// DBGFUNS("Tiam335xH264Source m_is_queue_empty=true tid:%d\n",pthread_self());
-		
+		envir().taskScheduler().unscheduleDelayedTask(nextTask());	
 		m_is_queue_empty=true;
 	}
 	
 			
 } 
- //struct timeval m_start, m_end;
 
 void Tiam335xH264Source::doGetNextFrame()
 {
@@ -150,25 +129,20 @@ void Tiam335xH264Source::doGetNextFrame()
 
 void Tiam335xH264Source::doStopGettingFrames()
 {
-	//DBGFUNS("Tiam335xH264Source STOP FRAME 1  tid:%d\n",pthread_self());
 	//启动获取视频数据线程
-	// FetchData::stopCap();
-	// emptyBufferFlag = true;
 	m_can_get_nextframe = false;
 
 	while(!m_is_queue_empty && m_started)
 	{
-		// DBGFUNS("Tiam335xH264Source STOP FRAME 2  tid:%d\n",pthread_self());
 		usleep(10000);
 	}
 
-	//DBGFUNS("Tiam335xH264Source STOP FRAME 2\n");
 }
 
 
 //网络包尺寸，注意尺寸不能太小，否则会崩溃
 unsigned int Tiam335xH264Source::maxFrameSize() const
 {
-	//printf("Tiam335xH264Source::maxFrameSize \n");
+	printf("Tiam335xH264Source::maxFrameSize \n");
 	return 150000;
 }
