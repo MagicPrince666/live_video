@@ -1,6 +1,6 @@
 CPP = g++
 
-TARGET	= rtsp_server
+TARGET	= RTSPServer
 
 
 livedir := ../live/

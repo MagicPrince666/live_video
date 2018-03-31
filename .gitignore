@@ -11,6 +11,5 @@ live/proxyServer/live555ProxyServer
 live/mediaServer/*.o
 live/mediaServer/live555MediaServer
 live/testProgs/
-release/Src/*.o
-release/Src/*.d
+release/objs/*.o
 release/RTSPServer
