@@ -16,7 +16,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include "CONSTANT.h"
-#include "cbuf.h"
+//#include "cbuf.h"
 #include "Tiam335xH264Source.hh"
 #include "v4l2uvc.h"
 #include "h264_xu_ctrls.h"
@@ -488,6 +488,7 @@ bool s_quit = true;
 
 bool emptyBuffer = false;
 char t_buf[204800];
+/*
 void *go(void *arg)
 {
 	printf("GOOOOOOOOOOOOOOOOOooo s_quit:%d\n", s_quit);
@@ -547,7 +548,7 @@ void *go(void *arg)
 		}
    }
 }
-
+*/
 int FetchData::bit_rate_setting(int rate)
 {
 	printf("-----start seting bit rate-----\n");
@@ -896,7 +897,7 @@ void FetchData::startCap()
 {
 	s_b_running = true;
 	data.CUBFEACHDATALEN = 200000;
-	cbuf_init(&data);
+	//cbuf_init(&data);
 #ifdef SOFT_H264
 	rbuf = RingBuffer_create(DEFAULT_BUF_SIZE);
 #endif
@@ -918,7 +919,7 @@ void FetchData::stopCap()
 	s_b_running = false;
 	printf("FetchData stopCap 1\n");  
     s_quit = true;
-	cbuf_destroy(&data);
+	//cbuf_destroy(&data);
 #ifdef SOFT_H264
 	RingBuffer_destroy(rbuf);
 #endif
