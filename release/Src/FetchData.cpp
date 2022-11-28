@@ -15,14 +15,10 @@
 #include <time.h>
 #include <sys/time.h>
 #include <signal.h>
-#include "CONSTANT.h"
-//#include "cbuf.h"
-#include "Tiam335xH264Source.hh"
-#include "v4l2uvc.h"
-#include "h264_xu_ctrls.h"
-//#include "Queue.h"
 
-//#define SOFT_H264
+#include "CONSTANT.h"
+#include "Tiam335xH264Source.hh"
+#include "h264_xu_ctrls.h"
 
 # define __DBGFUNS
 # ifdef __DBGFUNS
@@ -57,6 +53,18 @@ struct v4l2_buffer buf0;
 struct buffer {
 	void *         start;
 	size_t         length;
+};
+
+struct vdIn {
+    int32_t fd;
+    struct v4l2_capability cap;
+    struct v4l2_format fmt;
+    struct v4l2_buffer buf;
+    uint32_t width = 1280;
+    uint32_t height = 720;
+    uint32_t fps = 30;
+    struct buffer *buffers;
+    uint32_t n_buffers = 0;
 };
 
 static char            dev_name[16];
@@ -413,8 +421,6 @@ void cameraUninit(void)
 			int r = close(vd->fd);			
 			vd->fd = -1;
 		}
-		
-		int r1 = close_v4l2(vd);
 		vd = NULL;
 	}
 }

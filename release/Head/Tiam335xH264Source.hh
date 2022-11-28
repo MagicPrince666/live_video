@@ -56,10 +56,6 @@ protected: // redefined virtual functions
   bool m_can_get_nextframe;
   bool m_is_queue_empty;
   bool m_started;
-  
-
-
-
 };
 
 #endif /* TIAM335X_H264_H_ */

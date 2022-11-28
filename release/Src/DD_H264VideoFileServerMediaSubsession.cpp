@@ -57,8 +57,6 @@ DD_H264VideoFileServerMediaSubsession::~DD_H264VideoFileServerMediaSubsession()
   //   }  
 
 }
-#if 0
-#endif
 
 FramedSource* DD_H264VideoFileServerMediaSubsession::createNewStreamSource(
   unsigned /*clientSessionId*/, unsigned& estBitrate) 
@@ -79,88 +77,3 @@ RTPSink* DD_H264VideoFileServerMediaSubsession
  //DBGFUNS("__DD_H264VideoFileServerMediaSubsession::createNewRTPSink__\n");
   return H264VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic);
 }
-
-
-// void DD_H264VideoFileServerMediaSubsession::afterPlayingDummy(void* ptr)
-// {
-//      DD_H264VideoFileServerMediaSubsession * This = (DD_H264VideoFileServerMediaSubsession *)ptr;  
-//     This->m_done = 0xff;
-// }
-// void DD_H264VideoFileServerMediaSubsession::chkForAuxSDPLine(void* ptr)
-// {
-//    DD_H264VideoFileServerMediaSubsession * This = (DD_H264VideoFileServerMediaSubsession *)ptr;  
-//     This->chkForAuxSDPLine1();
-// }
-//   void DD_H264VideoFileServerMediaSubsession::chkForAuxSDPLine1()
-//   {
-
-//     printf("chkForAuxSDPLine1 1 \n");
-//     if (m_pDummyRTPSink->auxSDPLine())  
-//     {  
-//       printf("chkForAuxSDPLine1 2 \n");
-//         m_done = 0xff;  
-//     }  else
-//     {
-//        char const* fmtpFmt =
-//       "a=fmtp:%d packetization-mode=1"
-//       ";profile-level-id=000000"
-//       ";sprop-parameter-sets=H264\r\n";
-
-//     unsigned fmtpFmtSize = strlen(fmtpFmt)+3/* max char len */;
-
-//     char* fmtp = new char[fmtpFmtSize];
-//     sprintf(fmtp,fmtpFmt,m_pDummyRTPSink->rtpPayloadType());
-
-//     delete[] m_pSDPLine;
-//     m_pSDPLine = fmtp;//????????SDP???
-//     printf("SDP Info:%s\n",m_pSDPLine);
-    
-//     }
-//     // else  
-//     // {  printf("chkForAuxSDPLine1 3 \n");
-//     //     double delay = 1000.0 / (FRAME_PER_SEC * 2);  // ms  
-//     //     int to_delay = delay * 1000;  // us  
-  
-//     //     nextTask() = envir().taskScheduler().scheduleDelayedTask(to_delay, chkForAuxSDPLine, this);  
-//     // }  
-//   }
-
-// char const * DD_H264VideoFileServerMediaSubsession::getAuxSDPLine(RTPSink * rtpSink, FramedSource * inputSource)
-// {
-//    if (m_pSDPLine)  
-//     {  
-//         return m_pSDPLine;  
-//     }  
-  
-//     m_pDummyRTPSink = rtpSink;  
-//   printf("getAuxSDPLine 1 \n");
-//     //mp_dummy_rtpsink->startPlaying(*source, afterPlayingDummy, this);  
-//     // m_pDummyRTPSink->startPlaying(*inputSource, 0, 0);  
-//   printf("getAuxSDPLine 3 \n");
-  
-//     // chkForAuxSDPLine(this);  
-//   printf("getAuxSDPLine 4 \n");
-  
-//     // m_done = 0;  
-  
-//     // envir().taskScheduler().doEventLoop(&m_done);  
-//     printf("getAuxSDPLine 5 m_done:%d \n",m_done);
-//     char const* fmtpFmt =
-//       "a=fmtp:%d packetization-mode=1"
-//       ";profile-level-id=000000"
-//       ";sprop-parameter-sets=H264\r\n";
-
-//     unsigned fmtpFmtSize = strlen(fmtpFmt)+3/* max char len */;
-
-//     char* fmtp = new char[fmtpFmtSize];
-//     sprintf(fmtp,fmtpFmt,m_pDummyRTPSink->rtpPayloadType());
-
-//     m_pSDPLine = fmtp;//????????SDP???
-//     printf("SDP Info:%s\n",m_pSDPLine);
-//     // m_pSDPLine = strdup(m_pDummyRTPSink->auxSDPLine());  
-  
-//     // m_pDummyRTPSink->stopPlaying();  
-//     printf("getAuxSDPLine 6 \n");
-  
-//     return m_pSDPLine;  
-// } 

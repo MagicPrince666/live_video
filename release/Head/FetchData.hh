@@ -1,7 +1,6 @@
 #ifndef _FETCH_DATA_H_
 #define _FETCH_DATA_H_
 
-
 class FetchData
 {
 public:
