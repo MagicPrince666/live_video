@@ -1,7 +1,15 @@
 **/*.o
 **/*.a
+live/BasicUsageEnvironment/Makefile
+live/UsageEnvironment/Makefile
+live/groupsock/Makefile
+live/liveMedia/Makefile
+live/mediaServer/Makefile
+live/proxyServer/Makefile
+live/Makefile
 live/proxyServer/live555ProxyServer
 live/mediaServer/live555MediaServer
 live/testProgs/
 live/hlsProxy/
+.vscode
 release/RTSPServer
