@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2016 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
 // A simplified version of "H264or5VideoStreamFramer" that takes only complete,
 // discrete frames (rather than an arbitrary byte stream) as input.
 // This avoids the parsing and data copying overhead of the full
@@ -24,20 +24,83 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "H264or5VideoStreamDiscreteFramer.hh"
 
 H264or5VideoStreamDiscreteFramer
-::H264or5VideoStreamDiscreteFramer(int hNumber, UsageEnvironment& env, FramedSource* inputSource)
-  : H264or5VideoStreamFramer(hNumber, env, inputSource, False/*don't create a parser*/, False) {
+::H264or5VideoStreamDiscreteFramer(int hNumber, UsageEnvironment& env, FramedSource* inputSource,
+				   Boolean includeStartCodeInOutput,
+				   Boolean insertAccessUnitDelimiters)
+  : H264or5VideoStreamFramer(hNumber, env, inputSource, False/*don't create a parser*/,
+			     includeStartCodeInOutput, insertAccessUnitDelimiters) {
 }
 
 H264or5VideoStreamDiscreteFramer::~H264or5VideoStreamDiscreteFramer() {
 }
 
 void H264or5VideoStreamDiscreteFramer::doGetNextFrame() {
-  // Arrange to read data (which should be a complete H.264 or H.265 NAL unit)
-  // from our data source, directly into the client's input buffer.
-  // After reading this, we'll do some parsing on the frame.
-  fInputSource->getNextFrame(fTo, fMaxSize,
-                             afterGettingFrame, this,
-                             FramedSource::handleClosure, this);
+  if (fIncludeStartCodeInOutput) {
+    // Prepend a 4-byte 'start code' (0x00000001) to the output:
+    if (fMaxSize < 4) {  // there's no space
+      fNumTruncatedBytes = 4 - fMaxSize;
+      handleClosure();
+      return;
+    }
+    *fTo++ = 0x00; *fTo++ = 0x00; *fTo++ = 0x00; *fTo++ = 0x01;
+    fMaxSize -= 4;
+  }
+
+  if (fInsertAccessUnitDelimiters && pictureEndMarker()) {
+    // Deliver an "access_unit_delimiter" NAL unit instead:
+    unsigned const audNALSize = fHNumber == 264 ? 2 : 3;
+
+    // If we have VPS,SPS,PPS NAL units, then append those as well:
+    unsigned nalDataSize
+      = audNALSize + fLastSeenVPSSize + fLastSeenSPSSize + fLastSeenPPSSize;
+    if (fIncludeStartCodeInOutput) {
+      // Add the size of the 4-byte start codes:
+      if (fLastSeenVPSSize > 0) nalDataSize += 4;
+      if (fLastSeenSPSSize > 0) nalDataSize += 4;
+      if (fLastSeenPPSSize > 0) nalDataSize += 4;
+    }
+
+    if (nalDataSize > fMaxSize) { // there's no space
+      fNumTruncatedBytes = nalDataSize - fMaxSize;
+      handleClosure();
+      return;
+    }
+
+    if (fHNumber == 264) {
+      *fTo++ = 9; // "Access unit delimiter" nal_unit_type
+      *fTo++ = 0xF0; // "primary_pic_type" (7); "rbsp_trailing_bits()"
+    } else { // H.265
+      *fTo++ = 35<<1; // "Access unit delimiter" nal_unit_type
+      *fTo++ = 0; // "nuh_layer_id" (0); "nuh_temporal_id_plus1" (0) (Is this correct??)
+      *fTo++ = 0x50; // "pic_type" (2); "rbsp_trailing_bits()" (Is this correct??)
+    }
+
+    if (fLastSeenVPSSize > 0) {
+      if (fIncludeStartCodeInOutput) { *fTo++ = 0x00; *fTo++ = 0x00; *fTo++ = 0x00; *fTo++ = 0x01; }
+      memmove(fTo, fLastSeenVPS, fLastSeenVPSSize); fTo += fLastSeenVPSSize;
+    }
+    if (fLastSeenSPSSize > 0) {
+      if (fIncludeStartCodeInOutput) { *fTo++ = 0x00; *fTo++ = 0x00; *fTo++ = 0x00; *fTo++ = 0x01; }
+      memmove(fTo, fLastSeenSPS, fLastSeenSPSSize); fTo += fLastSeenSPSSize;
+    }
+    if (fLastSeenPPSSize > 0) {
+      if (fIncludeStartCodeInOutput) { *fTo++ = 0x00; *fTo++ = 0x00; *fTo++ = 0x00; *fTo++ = 0x01; }
+      memmove(fTo, fLastSeenPPS, fLastSeenPPSSize); fTo += fLastSeenPPSSize;
+    }
+
+    fFrameSize = (fIncludeStartCodeInOutput ? 4: 0) + nalDataSize;
+
+    pictureEndMarker() = False; // for next time
+    afterGetting(this); // complete delivery to the downstream object
+  } else {
+    // Normal case:
+    // Arrange to read data (which should be a complete H.264 or H.265 NAL unit)
+    // from our data source, directly into the client's input buffer.
+    // After reading this, we'll do some parsing on the frame.
+    fInputSource->getNextFrame(fTo, fMaxSize,
+			       afterGettingFrame, this,
+			       FramedSource::handleClosure, this);
+  }
 }
 
 void H264or5VideoStreamDiscreteFramer
@@ -70,7 +133,7 @@ void H264or5VideoStreamDiscreteFramer
   // Once again, to be clear: The NAL units that you feed to a "H264or5VideoStreamDiscreteFramer"
   // MUST NOT include start codes.
   if (frameSize >= 4 && fTo[0] == 0 && fTo[1] == 0 && ((fTo[2] == 0 && fTo[3] == 1) || fTo[2] == 1)) {
-    //envir() << "H264or5VideoStreamDiscreteFramer error: MPEG 'start code' seen in the input\n";
+    // envir() << "H264or5VideoStreamDiscreteFramer error: MPEG 'start code' seen in the input\n";
   } else if (isVPS(nal_unit_type)) { // Video parameter set (VPS)
     saveCopyOfVPS(fTo, frameSize);
   } else if (isSPS(nal_unit_type)) { // Sequence parameter set (SPS)
@@ -82,7 +145,7 @@ void H264or5VideoStreamDiscreteFramer
   fPictureEndMarker = nalUnitEndsAccessUnit(nal_unit_type);
 
   // Finally, complete delivery to the client:
-  fFrameSize = frameSize;
+  fFrameSize = fIncludeStartCodeInOutput ? (4+frameSize) : frameSize;
   fNumTruncatedBytes = numTruncatedBytes;
   fPresentationTime = presentationTime;
   fDurationInMicroseconds = durationInMicroseconds;

@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
-// Copyright (c) 1996-2016, Live Networks, Inc.  All rights reserved
+// Copyright (c) 1996-2022, Live Networks, Inc.  All rights reserved
 // LIVE555 Proxy Server
 // main program
 
@@ -38,7 +38,7 @@ char* passwordForREGISTER = NULL;
 
 static RTSPServer* createRTSPServer(Port port) {
   if (proxyREGISTERRequests) {
-    return RTSPServerWithREGISTERProxying::createNew(*env, port, authDB, authDBForREGISTER, 65, streamRTPOverTCP, verbosityLevel);
+    return RTSPServerWithREGISTERProxying::createNew(*env, port, authDB, authDBForREGISTER, 65, streamRTPOverTCP, verbosityLevel, username, password);
   } else {
     return RTSPServer::createNew(*env, port, authDB);
   }
@@ -159,15 +159,15 @@ int main(int argc, char** argv) {
 
     ++argv; --argc;
   }
-  if (argc < 2 && !proxyREGISTERRequests) usage(); // there must be at least one "rtsp://" URL at the end 
-  // Make sure that the remaining arguments appear to be "rtsp://" URLs:
+  if (argc < 2 && !proxyREGISTERRequests) usage(); // there must be at least one URL at the end 
+  // Make sure that the remaining arguments appear to be "rtsp://" (or "rtsps://") URLs:
   int i;
   for (i = 1; i < argc; ++i) {
-    if (strncmp(argv[i], "rtsp://", 7) != 0) usage();
+    if (strncmp(argv[i], "rtsp://", 7) != 0 && strncmp(argv[i], "rtsps://", 8) != 0) usage();
   }
   // Do some additional checking for invalid command-line argument combinations:
   if (authDBForREGISTER != NULL && !proxyREGISTERRequests) {
-    *env << "The '-U <username> <password>' option can be used only with -R\n";
+    *env << "The '-U <username-for-REGISTER> <password-for-REGISTER>' option can be used only with -R\n";
     usage();
   }
   if (streamRTPOverTCP) {

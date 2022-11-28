@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2016 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
 // A parser for a Matroska file.
 // C++ header
 
@@ -51,6 +51,7 @@ public:
   virtual ~MatroskaFileParser();
 
   void seekToTime(double& seekNPT);
+  void pause();
 
   // StreamParser 'client continue' function:
   static void continueParsing(void* clientData, unsigned char* ptr, unsigned size, struct timeval presentationTime);
@@ -90,6 +91,10 @@ private:
   void seekToFilePosition(u_int64_t offsetInFile);
   void seekToEndOfFile();
   void resetStateAfterSeeking(); // common code, called by both of the above
+
+  void resetPresentationTimes();
+      // called after a seek or pause to ensure that presentation times continue to be
+      // aligned with 'wall clock' time
 
 private: // redefined virtual functions
   virtual void restoreSavedParserState();

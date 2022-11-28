@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2016 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
 // A server demultiplexor for a Ogg file
 // Implementation
 
@@ -71,7 +71,7 @@ FramedSource* OggFileServerDemux::newDemuxedTrack(unsigned clientSessionId, u_in
       // for other ('real') session ids).  Because of this, a separate demultiplexor is used for each 'session 0' track.
   }
 
-  if (demuxToUse == NULL) demuxToUse = fOurOggFile->newDemux();
+  if (demuxToUse == NULL) demuxToUse = fOurOggFile->newDemux(onDemuxDeletion, this);
 
   fLastClientSessionId = clientSessionId;
   fLastCreatedDemux = demuxToUse;
@@ -106,4 +106,12 @@ void OggFileServerDemux::onOggFileCreation(OggFile* newFile) {
 
   // Now, call our own creation notification function:
   if (fOnCreation != NULL) (*fOnCreation)(this, fOnCreationClientData);
+}
+
+void OggFileServerDemux::onDemuxDeletion(void* clientData, OggDemux* demuxBeingDeleted) {
+  ((OggFileServerDemux*)clientData)->onDemuxDeletion(demuxBeingDeleted);
+}
+
+void OggFileServerDemux::onDemuxDeletion(OggDemux* demuxBeingDeleted) {
+  if (fLastCreatedDemux == demuxBeingDeleted) fLastCreatedDemux = NULL;
 }

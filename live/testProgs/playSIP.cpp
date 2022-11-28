@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
-// Copyright (c) 1996-2016, Live Networks, Inc.  All rights reserved
+// Copyright (c) 1996-2022, Live Networks, Inc.  All rights reserved
 // A SIP client test program that opens a SIP URL argument,
 // and extracts the data from each incoming RTP stream.
 
@@ -68,9 +68,9 @@ void getSDPDescription(RTSPClient::responseHandler* afterFunc) {
     if (addresses.numAddresses() == 0) {
       ourSIPClient->envir() << "Failed to find network address for \"" << proxyServerName << "\"\n";
     } else {
-      NetAddress address = *(addresses.firstAddress());
-      unsigned proxyServerAddress // later, allow for IPv6 #####
-	= *(unsigned*)(address.data());
+      struct sockaddr_storage proxyServerAddress;
+      copyAddress(proxyServerAddress, addresses.firstAddress());
+
       extern unsigned short proxyServerPortNum;
       if (proxyServerPortNum == 0) proxyServerPortNum = 5060; // default
 
@@ -143,8 +143,9 @@ void setupSubsession(MediaSubsession* subsession, Boolean /*streamUsingTCP*/, Bo
   subsession->rtcpChannelId = rtcpChannelId;
 
   // Set the RTP and RTCP sockets' destination address and port from the information in the SETUP response (if present):
-  netAddressBits destAddress = subsession->connectionEndpointAddress();
-  if (destAddress != 0) {
+  struct sockaddr_storage destAddress;
+  subsession->getConnectionEndpointAddress(destAddress);
+  if (!addressIsNull(destAddress)) {
     subsession->setDestinations(destAddress);
   }
   ////////// END hack code that should really be implemented in SIPClient //////////

@@ -2,22 +2,23 @@ INCLUDES = -Iinclude -I../UsageEnvironment/include
 PREFIX = /usr/local
 LIBDIR = $(PREFIX)/lib
 ##### Change the following for your environment:
-COMPILE_OPTS =		$(INCLUDES) -O2 -DSOCKLEN_T=socklen_t -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64
+CROSS_COMPILE?=		/home/prince/xos/output/host/bin/arm-neo-linux-gnueabihf-
+COMPILE_OPTS =		$(INCLUDES) -I/usr/local/include -I. -O2 -DSOCKLEN_T=socklen_t -DNO_SSTREAM=1 -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64
 C =			c
-C_COMPILER =		cc
-C_FLAGS =		$(COMPILE_OPTS) $(CPPFLAGS) $(CFLAGS)
+C_COMPILER =		$(CROSS_COMPILE)gcc
+C_FLAGS =		$(COMPILE_OPTS)
 CPP =			cpp
-CPLUSPLUS_COMPILER =	c++
-CPLUSPLUS_FLAGS =	$(COMPILE_OPTS) -Wall -DBSD=1 $(CPPFLAGS) $(CXXFLAGS)
+CPLUSPLUS_COMPILER =	$(CROSS_COMPILE)g++
+CPLUSPLUS_FLAGS =	$(COMPILE_OPTS) -Wall -DBSD=1
 OBJ =			o
-LINK =			c++ -o
-LINK_OPTS =		-L. $(LDFLAGS)
+LINK =			$(CROSS_COMPILE)g++ -o
+LINK_OPTS =		
 CONSOLE_LINK_OPTS =	$(LINK_OPTS)
-LIBRARY_LINK =		ar cr 
-LIBRARY_LINK_OPTS = 
+LIBRARY_LINK =		$(CROSS_COMPILE)ar cr 
+LIBRARY_LINK_OPTS =	$(LINK_OPTS)
 LIB_SUFFIX =			a
-LIBS_FOR_CONSOLE_APPLICATION = 
-LIBS_FOR_GUI_APPLICATION = 
+LIBS_FOR_CONSOLE_APPLICATION = -lssl -lcrypto
+LIBS_FOR_GUI_APPLICATION =
 EXE =
 ##### End of variables to change
 
@@ -38,13 +39,12 @@ include/NetAddress.hh:	include/NetCommon.h
 GroupEId.$(CPP):	include/GroupEId.hh
 include/GroupEId.hh:	include/NetAddress.hh
 inet.$(C):		include/NetCommon.h
-Groupsock.$(CPP):	include/Groupsock.hh include/GroupsockHelper.hh include/TunnelEncaps.hh
+Groupsock.$(CPP):	include/Groupsock.hh include/GroupsockHelper.hh
 include/Groupsock.hh:	include/groupsock_version.hh include/NetInterface.hh include/GroupEId.hh
 include/NetInterface.hh:	include/NetAddress.hh
-include/TunnelEncaps.hh:	include/NetAddress.hh
 NetInterface.$(CPP):	include/NetInterface.hh include/GroupsockHelper.hh
 NetAddress.$(CPP):	include/NetAddress.hh include/GroupsockHelper.hh
-IOHandlers.$(CPP):	include/IOHandlers.hh include/TunnelEncaps.hh
+IOHandlers.$(CPP):	include/IOHandlers.hh
 
 libgroupsock.$(LIB_SUFFIX): $(GROUPSOCK_LIB_OBJS) \
     $(PLATFORM_SPECIFIC_LIB_OBJS)

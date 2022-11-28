@@ -1,3 +1,4 @@
+PREFIX = /usr/local
 INCLUDES = -I../UsageEnvironment/include -I../groupsock/include -I../liveMedia/include -I../BasicUsageEnvironment/include
 # Default library filename suffixes for each library that we link with.  The "config.*" file might redefine these later.
 libliveMedia_LIB_SUFFIX = $(LIB_SUFFIX)
@@ -5,28 +6,28 @@ libBasicUsageEnvironment_LIB_SUFFIX = $(LIB_SUFFIX)
 libUsageEnvironment_LIB_SUFFIX = $(LIB_SUFFIX)
 libgroupsock_LIB_SUFFIX = $(LIB_SUFFIX)
 ##### Change the following for your environment:
-COMPILE_OPTS =		$(INCLUDES) -O2 -DSOCKLEN_T=socklen_t -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64
+CROSS_COMPILE?=		/home/prince/xos/output/host/bin/arm-neo-linux-gnueabihf-
+COMPILE_OPTS =		$(INCLUDES) -I/usr/local/include -I. -O2 -DSOCKLEN_T=socklen_t -DNO_SSTREAM=1 -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64
 C =			c
-C_COMPILER =		cc
-C_FLAGS =		$(COMPILE_OPTS) $(CPPFLAGS) $(CFLAGS)
+C_COMPILER =		$(CROSS_COMPILE)gcc
+C_FLAGS =		$(COMPILE_OPTS)
 CPP =			cpp
-CPLUSPLUS_COMPILER =	c++
-CPLUSPLUS_FLAGS =	$(COMPILE_OPTS) -Wall -DBSD=1 $(CPPFLAGS) $(CXXFLAGS)
+CPLUSPLUS_COMPILER =	$(CROSS_COMPILE)g++
+CPLUSPLUS_FLAGS =	$(COMPILE_OPTS) -Wall -DBSD=1
 OBJ =			o
-LINK =			c++ -o
-LINK_OPTS =		-L. $(LDFLAGS)
+LINK =			$(CROSS_COMPILE)g++ -o
+LINK_OPTS =		
 CONSOLE_LINK_OPTS =	$(LINK_OPTS)
-LIBRARY_LINK =		ar cr 
-LIBRARY_LINK_OPTS = 
+LIBRARY_LINK =		$(CROSS_COMPILE)ar cr 
+LIBRARY_LINK_OPTS =	$(LINK_OPTS)
 LIB_SUFFIX =			a
-LIBS_FOR_CONSOLE_APPLICATION = 
-LIBS_FOR_GUI_APPLICATION = 
+LIBS_FOR_CONSOLE_APPLICATION = -lssl -lcrypto
+LIBS_FOR_GUI_APPLICATION =
 EXE =
 ##### End of variables to change
 
 PROXY_SERVER = live555ProxyServer$(EXE)
 
-PREFIX = /usr/local
 ALL = $(PROXY_SERVER)
 all: $(ALL)
 

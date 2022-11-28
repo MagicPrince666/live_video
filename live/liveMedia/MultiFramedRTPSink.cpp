@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2016 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
 // RTP sink for a common kind of payload format: Those which pack multiple,
 // complete codec frames (as many as possible) into each RTP packet.
 // Implementation
@@ -29,21 +29,14 @@ void MultiFramedRTPSink::setPacketSizes(unsigned preferredPacketSize,
   if (preferredPacketSize > maxPacketSize || preferredPacketSize == 0) return;
       // sanity check
 
-  //printf("MultiFramedRTPSink::setPacketSizes 1");
   delete fOutBuf;
-  //printf("MultiFramedRTPSink::setPacketSizes 2");
-  
   fOutBuf = new OutPacketBuffer(preferredPacketSize, maxPacketSize);
-  //printf("MultiFramedRTPSink::setPacketSizes 3");
-  
   fOurMaxPacketSize = maxPacketSize; // save value, in case subclasses need it
-  //printf("MultiFramedRTPSink::setPacketSizes 4");
-  
 }
 
 #ifndef RTP_PAYLOAD_MAX_SIZE
-#define RTP_PAYLOAD_MAX_SIZE 1456
-      // Default max packet size (1500, minus allowance for IP, UDP, UMTP headers)
+#define RTP_PAYLOAD_MAX_SIZE 1452
+      // Default max packet size (1500, minus allowance for IP, UDP headers)
       // (Also, make it a multiple of 4 bytes, just in case that matters.)
 #endif
 #ifndef RTP_PAYLOAD_PREFERRED_SIZE
@@ -64,22 +57,7 @@ MultiFramedRTPSink::MultiFramedRTPSink(UsageEnvironment& env,
 }
 
 MultiFramedRTPSink::~MultiFramedRTPSink() {
- //printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1 \n");
-
-  if(fOutBuf)
-  
-  {
- //printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-1 \n");
-    delete fOutBuf;
- //printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-2 \n");
-    fOutBuf = NULL;
-//printf("MultiFramedRTPSink::~MultiFramedRTPSink()  1-3 \n");
-    
-  }
-  
-
- //printf("MultiFramedRTPSink::~MultiFramedRTPSink()  2 \n");
-  
+  delete fOutBuf;
 }
 
 void MultiFramedRTPSink
@@ -178,8 +156,6 @@ void MultiFramedRTPSink::setFramePadding(unsigned numPaddingBytes) {
 Boolean MultiFramedRTPSink::continuePlaying() {
   // Send the first packet.
   // (This will also schedule any future sends.)
-  //printf("MultiFramedRTPSink::continuePlaying() 1\n");
-
   buildAndSendPacket(True);
   return True;
 }
@@ -191,8 +167,6 @@ void MultiFramedRTPSink::stopPlaying() {
 
   // Then call the default "stopPlaying()" function:
   MediaSink::stopPlaying();
-  //printf("MultiFramedRTPSink::stopPlaying() 1 \n");
-  
 }
 
 void MultiFramedRTPSink::buildAndSendPacket(Boolean isFirstPacket) {
@@ -362,7 +336,7 @@ void MultiFramedRTPSink
     //      read would overflow the packet, or
     // (iii) it contains the last fragment of a fragmented frame, and we
     //      don't allow anything else to follow this or
-    // (iv) one frame per packet is allowed:
+    // (iv) only one frame per packet is allowed:
     if (fOutBuf->isPreferredSize()
         || fOutBuf->wouldOverflow(numFrameBytesToUse)
         || (fPreviousFrameEndedFragmentation &&
@@ -388,15 +362,40 @@ Boolean MultiFramedRTPSink::isTooBigForAPacket(unsigned numBytes) const {
   return fOutBuf->isTooBigForAPacket(numBytes);
 }
 
+#define MAX_UDP_PACKET_SIZE 65536
+
 void MultiFramedRTPSink::sendPacketIfNecessary() {
   if (fNumFramesUsedSoFar > 0) {
     // Send the packet:
 #ifdef TEST_LOSS
     if ((our_random()%10) != 0) // simulate 10% packet loss #####
 #endif
-      if (!fRTPInterface.sendPacket(fOutBuf->packet(), fOutBuf->curPacketSize())) {
-	// if failure handler has been specified, call it
-	if (fOnSendErrorFunc != NULL) (*fOnSendErrorFunc)(fOnSendErrorData);
+      if (fCrypto != NULL) { // Encrypt/tag the data before sending it:
+#ifndef NO_OPENSSL
+	// Hack: Because the MKI + authentication tag at the end of the packet would
+	// overwrite any following (still to be sent) frame data, we can't encrypt/tag
+	// the packet in place.  Instead, we have to make a copy (on the stack) of
+	// the packet, before encrypting/tagging/sending it:
+	if (fOutBuf->curPacketSize() + SRTP_MKI_LENGTH + SRTP_AUTH_TAG_LENGTH > MAX_UDP_PACKET_SIZE) {
+	  fprintf(stderr, "MultiFramedRTPSink::sendPacketIfNecessary(): Fatal error: packet size %d is too large for SRTP\n", fOutBuf->curPacketSize());
+	  exit(1);
+	}
+	u_int8_t packet[MAX_UDP_PACKET_SIZE];
+	memcpy(packet, fOutBuf->packet(), fOutBuf->curPacketSize());
+	unsigned newPacketSize;
+	
+	if (fCrypto->processOutgoingSRTPPacket(packet, fOutBuf->curPacketSize(), newPacketSize)) {
+	  if (!fRTPInterface.sendPacket(packet, newPacketSize)) {
+	    // if failure handler has been specified, call it
+	    if (fOnSendErrorFunc != NULL) (*fOnSendErrorFunc)(fOnSendErrorData);
+	  }
+	}
+#endif
+      } else { // unencrypted
+	if (!fRTPInterface.sendPacket(fOutBuf->packet(), fOutBuf->curPacketSize())) {
+	  // if failure handler has been specified, call it
+	  if (fOnSendErrorFunc != NULL) (*fOnSendErrorFunc)(fOnSendErrorData);
+	}
       }
     ++fPacketCount;
     fTotalOctetCount += fOutBuf->curPacketSize();

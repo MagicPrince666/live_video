@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2016 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
 // A class that encapsulates an Ogg file.
 // Implementation
 
@@ -56,11 +56,36 @@ OggTrack* OggFile::lookup(u_int32_t trackNumber) {
   return fTrackTable->lookup(trackNumber);
 }
 
-OggDemux* OggFile::newDemux() {
+struct DemuxRecord {
+  OggDemux* demux;
+  OggDemuxOnDeletionFunc* onDeletionFunc;
+  void* objectToNotify;
+};
+
+OggDemux* OggFile
+::newDemux(OggDemuxOnDeletionFunc* onDeletionFunc, void* objectToNotify) {
   OggDemux* demux = new OggDemux(*this);
-  fDemuxesTable->Add((char const*)demux, demux);
+
+  DemuxRecord* demuxRecord = new DemuxRecord();
+  demuxRecord->demux = demux;
+  demuxRecord->onDeletionFunc = onDeletionFunc;
+  demuxRecord->objectToNotify = objectToNotify;
+
+  fDemuxesTable->Add((char const*)demux, demuxRecord);
 
   return demux;
+}
+
+void OggFile::removeDemux(OggDemux* demux) {
+  DemuxRecord* demuxRecord = (DemuxRecord*)(fDemuxesTable->Lookup((char const*)demux));
+  if (demuxRecord != NULL) {
+    fDemuxesTable->Remove((char const*)demux);
+
+    if (demuxRecord->onDeletionFunc != NULL) {
+      (*demuxRecord->onDeletionFunc)(demuxRecord->objectToNotify, demux);
+    }
+    delete demuxRecord;
+  }
 }
 
 unsigned OggFile::numTracks() const {
@@ -143,9 +168,10 @@ OggFile::~OggFile() {
   delete fParserForInitialization;
 
   // Delete any outstanding "OggDemux"s, and the table for them:
-  OggDemux* demux;
-  while ((demux = (OggDemux*)fDemuxesTable->RemoveNext()) != NULL) {
-    delete demux;
+  DemuxRecord* demuxRecord;
+  while ((demuxRecord = (DemuxRecord*)fDemuxesTable->RemoveNext()) != NULL) {
+    delete demuxRecord->demux;
+    delete demuxRecord;
   }
   delete fDemuxesTable;
   delete fTrackTable;
@@ -167,10 +193,6 @@ void OggFile::handleEndOfBosPageParsing() {
 
 void OggFile::addTrack(OggTrack* newTrack) {
   fTrackTable->add(newTrack);
-}
-
-void OggFile::removeDemux(OggDemux* demux) {
-  fDemuxesTable->Remove((char const*)demux);
 }
 
 
@@ -290,7 +312,7 @@ void OggDemux::removeTrack(u_int32_t trackNumber) {
   fDemuxedTracksTable->Remove((char const*)trackNumber);
   if (fDemuxedTracksTable->numEntries() == 0) {
     // We no longer have any demuxed tracks, so delete ourselves now:
-    delete this;
+    Medium::close(this);
   }
 }
 

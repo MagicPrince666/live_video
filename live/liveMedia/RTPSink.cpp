@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,11 +14,12 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2016 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
 // RTP Sinks
 // Implementation
 
 #include "RTPSink.hh"
+#include "Base64.hh"
 #include "GroupsockHelper.hh"
 
 ////////// RTPSink //////////
@@ -51,6 +52,7 @@ RTPSink::RTPSink(UsageEnvironment& env,
   : MediaSink(env), fRTPInterface(this, rtpGS),
     fRTPPayloadType(rtpPayloadType),
     fPacketCount(0), fOctetCount(0), fTotalOctetCount(0),
+    fMIKEYState(NULL), fCrypto(NULL),
     fTimestampFrequency(rtpTimestampFrequency), fNextTimestampHasBeenPreset(False), fEnableRTCPReports(True),
     fNumChannels(numChannels), fEstimatedBitrate(0) {
   fRTPPayloadFormatName
@@ -67,14 +69,11 @@ RTPSink::RTPSink(UsageEnvironment& env,
 }
 
 RTPSink::~RTPSink() {
-   //printf("RTPSink::~RTPSink() 1 \n");
-
   delete fTransmissionStatsDB;
   delete[] (char*)fRTPPayloadFormatName;
+  delete fCrypto; delete fMIKEYState;
   fRTPInterface.forgetOurGroupsock();
-   //printf("RTPSink::~RTPSink() 2 \n");
-  
-    // so that the "fRTCPInterface" destructor doesn't turn off background read handling (in case
+    // so that the "fRTPInterface" destructor doesn't turn off background read handling (in case
     // its 'groupsock' is being shared with something else that does background read handling).
 }
 
@@ -132,6 +131,28 @@ void RTPSink::resetPresentationTimes() {
   fInitialPresentationTime.tv_usec = fMostRecentPresentationTime.tv_usec = 0;
 }
 
+void RTPSink::setupForSRTP(Boolean useEncryption) {
+  // Set up keying state for streaming via SRTP:
+  delete fCrypto; delete fMIKEYState;
+  fMIKEYState = new MIKEYState(useEncryption);
+  fCrypto = new SRTPCryptographicContext(*fMIKEYState);
+}
+
+u_int8_t* RTPSink::setupForSRTP(Boolean useEncryption, unsigned& resultMIKEYStateMessageSize) {
+  // Set up keying state for streaming via SRTP:
+  setupForSRTP(useEncryption);
+
+  u_int8_t* MIKEYStateMessage = fMIKEYState->generateMessage(resultMIKEYStateMessageSize);
+  return MIKEYStateMessage;
+}
+
+void RTPSink::setupForSRTP(u_int8_t const* MIKEYStateMessage, unsigned MIKEYStateMessageSize) {
+  // Set up keying state for streaming via SRTP:
+  delete fCrypto; delete fMIKEYState;
+  fMIKEYState = MIKEYState::createNew(MIKEYStateMessage, MIKEYStateMessageSize);
+  fCrypto = new SRTPCryptographicContext(*fMIKEYState);
+}
+
 char const* RTPSink::sdpMediaType() const {
   return "data";
   // default SDP media (m=) type, unless redefined by subclasses
@@ -147,10 +168,10 @@ char* RTPSink::rtpmapLine() const {
       encodingParamsPart = strDup("");
     }
     char const* const rtpmapFmt = "a=rtpmap:%d %s/%d%s\r\n";
-    unsigned rtpmapFmtSize = strlen(rtpmapFmt)
+    unsigned rtpmapLineSize = strlen(rtpmapFmt)
       + 3 /* max char len */ + strlen(rtpPayloadFormatName())
       + 20 /* max int len */ + strlen(encodingParamsPart);
-    char* rtpmapLine = new char[rtpmapFmtSize];
+    char* rtpmapLine = new char[rtpmapLineSize];
     sprintf(rtpmapLine, rtpmapFmt,
 	    rtpPayloadType(), rtpPayloadFormatName(),
 	    rtpTimestampFrequency(), encodingParamsPart);
@@ -158,7 +179,27 @@ char* RTPSink::rtpmapLine() const {
 
     return rtpmapLine;
   } else {
-    // The payload format is staic, so there's no "a=rtpmap:" line:
+    // The payload format is static, so there's no "a=rtpmap:" line:
+    return strDup("");
+  }
+}
+
+char* RTPSink::keyMgmtLine() {
+  u_int8_t* mikeyMessage;
+  unsigned mikeyMessageSize;
+  if (fMIKEYState != NULL &&
+      (mikeyMessage = fMIKEYState->generateMessage(mikeyMessageSize)) != NULL) {
+    char const* const keyMgmtFmt = "a=key-mgmt:mikey %s\r\n";
+    char* base64EncodedData = base64Encode((char*)mikeyMessage, mikeyMessageSize);
+    delete[] mikeyMessage;
+    
+    unsigned keyMgmtLineSize = strlen(keyMgmtFmt) + strlen(base64EncodedData);
+    char* keyMgmtLine = new char[keyMgmtLineSize];
+    sprintf(keyMgmtLine, keyMgmtFmt, base64EncodedData);
+    delete[] base64EncodedData;
+
+    return keyMgmtLine;
+  } else { // no "a=key-mgmt:" line
     return strDup("");
   }
 }
@@ -188,7 +229,7 @@ RTPTransmissionStatsDB::~RTPTransmissionStatsDB() {
 }
 
 void RTPTransmissionStatsDB
-::noteIncomingRR(u_int32_t SSRC, struct sockaddr_in const& lastFromAddress,
+::noteIncomingRR(u_int32_t SSRC, struct sockaddr_storage const& lastFromAddress,
                  unsigned lossStats, unsigned lastPacketNumReceived,
                  unsigned jitter, unsigned lastSRTime, unsigned diffSR_RRTime) {
   RTPTransmissionStats* stats = lookup(SSRC);
@@ -263,7 +304,7 @@ RTPTransmissionStats::RTPTransmissionStats(RTPSink& rtpSink, u_int32_t SSRC)
 RTPTransmissionStats::~RTPTransmissionStats() {}
 
 void RTPTransmissionStats
-::noteIncomingRR(struct sockaddr_in const& lastFromAddress,
+::noteIncomingRR(struct sockaddr_storage const& lastFromAddress,
 		 unsigned lossStats, unsigned lastPacketNumReceived,
 		 unsigned jitter, unsigned lastSRTime,
 		 unsigned diffSR_RRTime) {

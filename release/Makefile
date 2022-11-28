@@ -1,4 +1,4 @@
-CPP = g++
+CPP = /home/prince/xos/output/host/bin/arm-neo-linux-gnueabihf-g++
 
 TARGET	= RTSPServer
 
@@ -14,7 +14,7 @@ LIBDIR = -L$(usageenviroment) -L$(basicusage) -L$(livemedia) -L$(groupsock)
 DIR		= . ./Src
 INC		= -I./Head -I$(usageenviroment)/include -I$(basicusage)/include -I$(livemedia)/include -I$(groupsock)/include
 CFLAGS	= -g -Wall -O3
-LDFLAGS = $(LIBDIR) -L./lib -lx264 -lliveMedia -lBasicUsageEnvironment -lgroupsock -lUsageEnvironment -lpthread -ldl
+LDFLAGS = $(LIBDIR) -lliveMedia -lBasicUsageEnvironment -lgroupsock -lUsageEnvironment -lpthread -ldl -lssl -lcrypto
 
 OBJPATH	= ./objs
 

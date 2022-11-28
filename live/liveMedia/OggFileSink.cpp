@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2016 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
 // 'Ogg' File Sink (recording a single media track only)
 // Implementation
 
@@ -52,7 +52,7 @@ OggFileSink::OggFileSink(UsageEnvironment& env, FILE* fid,
 			 unsigned samplingFrequency, char const* configStr,
 			 unsigned bufferSize, char const* perFrameFileNamePrefix)
   : FileSink(env, fid, bufferSize, perFrameFileNamePrefix),
-    fSamplingFrequency(samplingFrequency), fConfigStr(configStr),
+    fSamplingFrequency(samplingFrequency), fConfigStr(strDup(configStr)),
     fHaveWrittenFirstFrame(False), fHaveSeenEOF(False),
     fGranulePosition(0), fGranulePositionAdjustment(0), fPageSequenceNumber(0),
     fIsTheora(False), fGranuleIncrementPerFrame(1),
@@ -78,6 +78,7 @@ OggFileSink::~OggFileSink() {
   OggFileSink::addData(fAltBuffer, fAltFrameSize, fAltPresentationTime);
 
   delete[] fAltBuffer;
+  delete[] (char*)fConfigStr;
 }
 
 Boolean OggFileSink::continuePlaying() {
