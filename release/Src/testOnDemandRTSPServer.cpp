@@ -24,38 +24,15 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <BasicUsageEnvironment.hh>
 #include <liveMedia.hh>
 
-#include <execinfo.h>
-#include <pthread.h>
 #include <signal.h>
 #include <stdint.h>
 #include <unistd.h>
-
-/****crash handler begin******/
-// static void _signal_handler(int signum)
-// {
-//     void *array[10];
-//     size_t size;
-//     char **strings;
-//     size_t i;
-
-//     signal(signum, SIG_DFL); /* 还原默认的信号处理handler */
-
-//     size = backtrace (array, 10);
-//     strings = (char **)backtrace_symbols (array, size);
-
-//     fprintf(stderr, "widebright received SIGSEGV! Stack trace:\n");
-//     for (i = 0; i < size; i++) {
-//         fprintf(stderr, "%d %s \n",i,strings[i]);
-//     }
-
-//     free (strings);
-//     exit(1);
-// }
+#include <thread>
 
 UsageEnvironment *video_env;
 
 //視頻採集
-void *video_thread_func(void *param)
+void video_thread_func(void *param)
 {
     TaskScheduler *scheduler = BasicTaskScheduler::createNew();
     video_env                = BasicUsageEnvironment::createNew(*scheduler);
@@ -64,71 +41,6 @@ void *video_thread_func(void *param)
     s->addSubsession(DD_H264VideoFileServerMediaSubsession ::createNew(*video_env, NULL));
 
     video_env->taskScheduler().doEventLoop(); // does not return
-    return NULL;
-}
-
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#define FIFO_NAME "/tmp/my_fifo"
-#define BUF_SIZE 128
-
-//在线设置
-void *set_thread_func(void *param)
-{
-    char buf[BUF_SIZE];
-    memset(buf, 0, BUF_SIZE);
-    int pipe_fd;
-    int res;
-    int bytes_read = 0;
-
-    if ((mkfifo(FIFO_NAME, O_CREAT | O_EXCL) < 0) && (errno != EEXIST)) //创建有名管道,并设置相应的权限
-        printf("cannot create fifoserver \n");
-    printf("perparing for reading bytes ... \n");
-
-    printf("PID %d open pipe O_RDONLY\n", getpid());
-    pipe_fd = open(FIFO_NAME, O_RDONLY | O_NONBLOCK);
-    if (pipe_fd <= 0)
-        pthread_exit(NULL);
-    else
-        printf("start pipe read\n");
-
-    while (1) {
-        if (pipe_fd != -1) {
-            bytes_read = read(pipe_fd, buf, sizeof(buf));
-            if (bytes_read > 0) {
-                printf("buf:%s\n", buf);
-                char *str = strstr(buf, "AT+RATE=");
-                if (str != NULL) {
-                    int rate = atoi(buf + 8);
-                    printf("set bitrate:%d bps\n", rate);
-                    if (rate >= 1000000 && rate <= 16000000) //用此接口支持动态码率
-                    {
-                        if (-1 == FetchData::bit_rate_setting(rate))
-                            printf("set bit rate error\n");
-                    } else
-                        printf("Parameter error!\nNo change\n");
-                }
-            }
-        }
-
-        sleep(1);
-    }
-    close(pipe_fd);
-    pthread_exit(NULL);
-}
-
-static pthread_t set_thread;
-static pthread_t video_thread;
-
-void createVideoEventLoop(ServerMediaSession *s)
-{
-    int res = pthread_create(&video_thread, NULL, video_thread_func, s);
-    if (res != 0) {
-        printf(" VIDEO EVENT LOOP ERROR \n");
-        exit(EXIT_FAILURE);
-    }
 }
 
 UsageEnvironment *env;
@@ -223,12 +135,12 @@ int main(int argc, char **argv)
         ServerMediaSession *sms = ServerMediaSession::createNew(*env, streamName, streamName,
                                                                 descriptionString);
 
+        std::thread video_thread(video_thread_func, sms);
+        video_thread.detach();
+
         while (video_env == NULL) {
-            createVideoEventLoop(sms);
             sleep(1);
         }
-
-        pthread_create(&set_thread, NULL, set_thread_func, NULL);
 
         rtspServer->addServerMediaSession(sms);
 
