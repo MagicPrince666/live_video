@@ -21,7 +21,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 
 #include "DD_H264VideoFileServerMediaSubsession.hh"
 #include "H264VideoRTPSink.hh"
-#include "Tiam335xH264Source.hh"
+#include "H264CameraSource.hh"
 #include "H264VideoStreamDiscreteFramer.hh"
 
 
@@ -67,7 +67,7 @@ FramedSource* DD_H264VideoFileServerMediaSubsession::createNewStreamSource(
   estBitrate = 1024000; // kbps, estimate
 
   //视频真正实现类
-  return H264VideoStreamDiscreteFramer::createNew(envir(), Tiam335xH264Source::createNew(envir()));
+  return H264VideoStreamDiscreteFramer::createNew(envir(), H264CameraSource::createNew(envir()));
 }
 
 RTPSink* DD_H264VideoFileServerMediaSubsession

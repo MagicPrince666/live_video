@@ -5,7 +5,7 @@
  *      Author: Stone
  */
 
-#include "Tiam335xH264Source.hh"
+#include "H264CameraSource.hh"
 #include "FetchData.hh"
 //#include "cbuf.h"
 
@@ -22,25 +22,24 @@ FILE *rec_file = NULL;
 
 bool emptyBufferFlag = true;
 
-// extern cbuf_t g_cbuf;
-Tiam335xH264Source::Tiam335xH264Source(UsageEnvironment &env) : FramedSource(env), m_pToken(0)
+H264CameraSource::H264CameraSource(UsageEnvironment &env) : FramedSource(env), m_pToken(0)
 {
     m_can_get_nextframe = true;
     m_is_queue_empty    = false;
     bVideoFirst         = true;
     m_started           = false;
 
-    printf("Tiam335xH264Source::Tiam335xH264Source \n");
+    printf("H264CameraSource::H264CameraSource \n");
     gettimeofday(&sPresentationTime, NULL);
 
     //启动获取视频数据线程
     FetchData::startCap();
     emptyBufferFlag = true;
     FetchData::setSource(this);
-    m_eventTriggerId = envir().taskScheduler().createEventTrigger(Tiam335xH264Source::updateDataNotify);
+    m_eventTriggerId = envir().taskScheduler().createEventTrigger(H264CameraSource::updateDataNotify);
 }
 
-Tiam335xH264Source::~Tiam335xH264Source()
+H264CameraSource::~H264CameraSource()
 {
     if (rec_file != NULL) {
         fclose(rec_file);
@@ -69,10 +68,10 @@ void timeval_add(struct timeval *result, struct timeval *t2, struct timeval *t1)
     result->tv_usec = total % 1000000;
 }
 
-struct timeval Tiam335xH264Source::sPresentationTime;
-struct timeval Tiam335xH264Source::sdiff;
-bool Tiam335xH264Source::sbTimeUpdate = false;
-void Tiam335xH264Source::updateTime(struct timeval &p)
+struct timeval H264CameraSource::sPresentationTime;
+struct timeval H264CameraSource::sdiff;
+bool H264CameraSource::sbTimeUpdate = false;
+void H264CameraSource::updateTime(struct timeval &p)
 {
     struct timeval now;
     gettimeofday(&now, NULL);
@@ -85,18 +84,18 @@ void Tiam335xH264Source::updateTime(struct timeval &p)
     sbTimeUpdate = true;
 }
 
-void Tiam335xH264Source::doUpdateStart()
+void H264CameraSource::doUpdateStart()
 {
     envir().taskScheduler().triggerEvent(m_eventTriggerId, this);
 }
 
-void Tiam335xH264Source::doUpdateDataNotify()
+void H264CameraSource::doUpdateDataNotify()
 {
     // nextTask() = envir().taskScheduler().scheduleDelayedTask(0,(TaskFunc*)FramedSource::afterGetting,this);
     afterGetting(this);
 }
 
-void Tiam335xH264Source::GetFrameData()
+void H264CameraSource::GetFrameData()
 {
     unsigned len = FetchData::getData(fTo, fMaxSize, fFrameSize, fNumTruncatedBytes);
 
@@ -109,7 +108,7 @@ void Tiam335xH264Source::GetFrameData()
     }
 }
 
-void Tiam335xH264Source::doGetNextFrame()
+void H264CameraSource::doGetNextFrame()
 {
     if (!m_started) {
         m_started = true;
@@ -118,7 +117,7 @@ void Tiam335xH264Source::doGetNextFrame()
     GetFrameData();
 }
 
-void Tiam335xH264Source::doStopGettingFrames()
+void H264CameraSource::doStopGettingFrames()
 {
     //启动获取视频数据线程
     m_can_get_nextframe = false;
@@ -129,8 +128,8 @@ void Tiam335xH264Source::doStopGettingFrames()
 }
 
 //网络包尺寸，注意尺寸不能太小，否则会崩溃
-unsigned int Tiam335xH264Source::maxFrameSize() const
+unsigned int H264CameraSource::maxFrameSize() const
 {
-    printf("Tiam335xH264Source::maxFrameSize \n");
+    printf("H264CameraSource::maxFrameSize \n");
     return 150000;
 }

@@ -17,7 +17,7 @@
 #include <unistd.h>
 
 #include "CONSTANT.h"
-#include "Tiam335xH264Source.hh"
+#include "H264CameraSource.hh"
 #include "h264_xu_ctrls.h"
 
 #define __DBGFUNS
