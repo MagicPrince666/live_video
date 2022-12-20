@@ -1,5 +1,6 @@
 **/*.o
 **/*.a
+**/.DS_Store
 live/BasicUsageEnvironment/Makefile
 live/UsageEnvironment/Makefile
 live/groupsock/Makefile
